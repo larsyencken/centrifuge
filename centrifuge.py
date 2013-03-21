@@ -12,18 +12,20 @@ import HTMLParser
 import textwrap
 #import webbrowser
 
-from clint.textui import colored, indent, puts
+from clint.textui import colored
 import pymongo
 
 import twitter
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 DB_NAME = 'centrifuge'
+OAUTH_FILE = '~/.twitter_oauth'
 
 
 def twitter_connect():
     oauth_token, oauth_secret = twitter.read_token_file(
-            os.path.expanduser('~/.twitter_oauth'))
+            os.path.expanduser(OAUTH_FILE)
+        )
 
     t = twitter.Twitter(auth=twitter.OAuth(
             oauth_token,
@@ -55,10 +57,9 @@ class InteractiveStream(cmd.Cmd):
                     self.h.unescape(t['text']),
                     self.width - 6
                 ))
-            puts('%2d. %s' % (i + 1, lines[0]))
-            with indent(4):
-                for l in lines[1:]:
-                    puts(l)
+            print u'%2d. %s' % (i + 1, lines[0])
+            for l in lines[1:]:
+                print u'    %s' % l
             print '   ', colored.red('@%s' % user), '(%s)' % name
             print
 
