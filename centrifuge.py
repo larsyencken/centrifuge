@@ -44,18 +44,21 @@ class InteractiveStream(cmd.Cmd):
         self.db = getattr(pymongo.Connection(), DB_NAME)
         self.current = []
         self.h = HTMLParser.HTMLParser()
-        self.width = map(int, os.popen('stty size', 'r').read().split())[1]
+
+    def _get_width(self):
+        return map(int, os.popen('stty size', 'r').read().split())[1]
 
     def do_s(self, line):
         "Fetch recent stream."
         tweets = self.tw.statuses.home_timeline()[:10]
+        width = self._get_width()
         self.current = tweets
         for i, t in enumerate(tweets):
             user = t['user']['screen_name']
             name = t['user']['name'].strip()
             lines = map(self.highlight_text, textwrap.wrap(
                     self.h.unescape(t['text']),
-                    self.width - 6
+                    width - 6
                 ))
             print u'%2d. %s' % (i + 1, lines[0])
             for l in lines[1:]:
