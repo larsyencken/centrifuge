@@ -117,7 +117,7 @@ class InteractiveStream(cmd.Cmd):
     def highlight_text(self, text):
         text = re.sub('(@[A-Za-z0-9_]+)', str(colored.blue('\\1')), text,
                 re.UNICODE)
-        text = re.sub('(https?://[^ ]+)', str(colored.cyan('\\1')), text,
+        text = re.sub('(https?://[^ "\']+)', str(colored.cyan('\\1')), text,
                 re.UNICODE)
         text = re.sub('(#[^,.:; ]+)', str(colored.green('\\1')), text)
         text = re.sub(' +', ' ', text, re.UNICODE)
