@@ -20,6 +20,7 @@ from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
 
 DB_NAME = 'centrifuge'
 OAUTH_FILE = '~/.twitter_oauth'
+WIDTH_TOLERANCE = 2
 
 
 def twitter_connect():
@@ -45,26 +46,50 @@ class InteractiveStream(cmd.Cmd):
         self.current = []
         self.h = HTMLParser.HTMLParser()
 
-    def _get_width(self):
-        return map(int, os.popen('stty size', 'r').read().split())[1]
+    def _get_console_size(self):
+        return map(int, os.popen('stty size', 'r').read().split())
 
     def do_s(self, line):
         "Fetch recent stream."
+        os.system('clear')
         tweets = self.tw.statuses.home_timeline()[:10]
-        width = self._get_width()
-        self.current = tweets
+        height, width = self._get_console_size()
+        remaining = height - 1
+
         for i, t in enumerate(tweets):
             user = t['user']['screen_name']
             name = t['user']['name'].strip()
+            text = t['text']
+            m = re.match('^RT (@[a-zA-Z0-9_]+): ', text)
+            if m:
+                author = u'%s, via %s (%s)' % (
+                        colored.red(m.group(1)),
+                        colored.red('@%s' % user),
+                        name
+                    )
+                text = text.split(': ', 1)[1]
+            else:
+                author = u'%s (%s)' % (colored.red('@%s' % user), name)
+
+            indent = 4
             lines = map(self.highlight_text, textwrap.wrap(
-                    self.h.unescape(t['text']),
-                    width - 6
+                    self.h.unescape(text),
+                    width - indent - WIDTH_TOLERANCE
                 ))
-            print u'%2d. %s' % (i + 1, lines[0])
-            for l in lines[1:]:
-                print u'    %s' % l
-            print '   ', colored.red('@%s' % user), '(%s)' % name
+            lines.append(author)
+
+            tweet_height = len(lines) + 2
+            if tweet_height > remaining:
+                break
+
+            lines = [l for l in self._format_lines(i, lines)]
+            print '\n'.join(lines)
             print
+            remaining -= tweet_height
+
+        print '\n' * (remaining - 1)
+
+        self.current = tweets[:i + 1]
 
     def do_EOF(self, l):
         return True
@@ -72,10 +97,6 @@ class InteractiveStream(cmd.Cmd):
     def do_q(self, l):
         "Quit."
         return True
-
-    def do_c(self, l):
-        "Clear the screen."
-        os.system('clear')
 
     def do_o(self, i, j=None):
         "Open the URL in a tweet."
@@ -89,6 +110,13 @@ class InteractiveStream(cmd.Cmd):
         text = re.sub('(#[^,.:; ]+)', str(colored.green('\\1')), text)
         text = re.sub(' +', ' ', text, re.UNICODE)
         return text
+
+    def _format_lines(self, i, lines):
+        r = []
+        r.append(u'%2d. %s' % (i + 1, lines[0]))
+        for l in lines[1:]:
+            r.append(u'    %s' % l)
+        return r
 
 
 def main():
