@@ -42,8 +42,7 @@ class InteractiveStream(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.tw = twitter_connect()
-        #self.db = getattr(pymongo.Connection(), DB_NAME)
-        self.current = []
+        self.current = None
         self.h = HTMLParser.HTMLParser()
 
     def _get_console_size(self):
@@ -52,7 +51,7 @@ class InteractiveStream(cmd.Cmd):
     def do_s(self, line):
         "Fetch recent stream."
         os.system('clear')
-        tweets = self.tw.statuses.home_timeline()[:10]
+        tweets = self.tw.statuses.home_timeline()
         height, width = self._get_console_size()
         remaining = height - 1
 
@@ -115,12 +114,12 @@ class InteractiveStream(cmd.Cmd):
             print 'url out of range'
 
     def highlight_text(self, text):
-        text = re.sub('(@[A-Za-z0-9_]+)', str(colored.blue('\\1')), text,
+        text = re.sub(u'(@[A-Za-z0-9_]+)', str(colored.blue('\\1')), text,
                 re.UNICODE)
-        text = re.sub('(https?://[^ "\']+)', str(colored.cyan('\\1')), text,
+        text = re.sub(u'(https?://[^ "\'”“]+)', str(colored.cyan('\\1')), text,
                 re.UNICODE)
-        text = re.sub('(#[^,.:; ]+)', str(colored.green('\\1')), text)
-        text = re.sub(' +', ' ', text, re.UNICODE)
+        text = re.sub(u'(#[^,.:; ]+)', str(colored.green('\\1')), text)
+        text = re.sub(u' +', ' ', text, re.UNICODE)
         return text
 
     def _format_lines(self, i, lines):
