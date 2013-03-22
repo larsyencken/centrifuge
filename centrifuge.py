@@ -5,6 +5,8 @@
 #  centrifuge
 #
 
+from __future__ import print_function
+
 import os
 import sys
 import cmd
@@ -36,29 +38,15 @@ class TwitterCursor(object):
     Provide stateful iteration up and down the timeline, anchored around the
     initial set of tweets pulled.
     """
-    def __init__(self):
+    def __init__(self, api=None):
         logging.info('Connecting to twitter')
-        self.tw = self.connect()
+        self.api = api or connect()
         self.above = []
         logging.info('Asking for 20 tweets')
-        self.below = list(reversed(self.tw.statuses.home_timeline(count=20)))
+        self.below = list(reversed(self.api.statuses.home_timeline(count=20)))
         logging.info('Got %d' % len(self.below))
         self.oldest_seen = sys.maxint
         self.newest_seen = None
-
-    def connect(self):
-        oauth_token, oauth_secret = twitter.read_token_file(
-                os.path.expanduser(OAUTH_FILE)
-            )
-
-        t = twitter.Twitter(auth=twitter.OAuth(
-                oauth_token,
-                oauth_secret,
-                CONSUMER_KEY,
-                CONSUMER_SECRET,
-            ))
-
-        return t
 
     def iterolder(self):
         while True:
@@ -68,7 +56,7 @@ class TwitterCursor(object):
                 self.newest_seen = max(self.newest_seen, t['id'])
                 yield t
 
-            self.below = list(reversed(self.tw.statuses.home_timeline(
+            self.below = list(reversed(self.api.statuses.home_timeline(
                     count=20, max_id=self.oldest_seen - 1)))
 
     def pushback_older(self, t):
@@ -76,7 +64,7 @@ class TwitterCursor(object):
 
     def iternewer(self):
         newest = self.above[0]['id'] if self.above else self.newest_seen
-        self.above[0:0] = list(reversed(self.tw.statuses.home_timeline(
+        self.above[0:0] = list(reversed(self.api.statuses.home_timeline(
                 count=20, since_id=newest)))
         while self.above:
             t = self.above.pop()
@@ -137,14 +125,14 @@ class InteractiveStream(cmd.Cmd):
                 break
 
             lines = [l for l in self._format_lines(i, lines)]
-            print '\n'.join(lines)
-            print
+            print('\n'.join(lines))
+            print()
             remaining -= tweet_height
             logging.debug("Included tweet, got %d left" % remaining)
             self.current.append(t)
 
         if remaining > 1:
-            print '\n' * (remaining - 1)
+            print('\n' * (remaining - 1))
 
     def do_EOF(self, l):
         return True
@@ -158,18 +146,18 @@ class InteractiveStream(cmd.Cmd):
         try:
             args = map(int, args)
         except ValueError:
-            print 'Just number the tweets with urls you want to open.\n'
+            print('Just number the tweets with urls you want to open.\n')
             return
 
-        print 'Opening %d urls' % len(args)
+        print('Opening %d urls' % len(args))
         for i in args:
             if i < 1 or i > len(self.current):
-                print 'No tweet numbered %d -- skipping' % i
+                print('No tweet numbered %d -- skipping' % i)
                 continue
 
             urls = self.current[i - 1]['entities']['urls']
             if not urls:
-                print 'No urls for tweet %d -- skipping' % i
+                print('No urls for tweet %d -- skipping' % i)
                 continue
 
             # XXX what about multi-url case?
@@ -190,6 +178,22 @@ class InteractiveStream(cmd.Cmd):
         for l in lines[1:]:
             r.append(u'    %s' % l)
         return r
+
+
+def connect():
+    "Prepare an authenticated API object for use."
+    oauth_token, oauth_secret = twitter.read_token_file(
+            os.path.expanduser(OAUTH_FILE)
+        )
+
+    t = twitter.Twitter(auth=twitter.OAuth(
+            oauth_token,
+            oauth_secret,
+            CONSUMER_KEY,
+            CONSUMER_SECRET,
+        ))
+
+    return t
 
 
 def main():
