@@ -10,10 +10,10 @@ import cmd
 import re
 import HTMLParser
 import textwrap
-#import webbrowser
+import webbrowser
 
 from clint.textui import colored
-import pymongo
+#import pymongo
 
 import twitter
 from twitter.cmdline import CONSUMER_KEY, CONSUMER_SECRET
@@ -42,7 +42,7 @@ class InteractiveStream(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.tw = twitter_connect()
-        self.db = getattr(pymongo.Connection(), DB_NAME)
+        #self.db = getattr(pymongo.Connection(), DB_NAME)
         self.current = []
         self.h = HTMLParser.HTMLParser()
 
@@ -100,7 +100,19 @@ class InteractiveStream(cmd.Cmd):
 
     def do_o(self, i, j=None):
         "Open the URL in a tweet."
-        pass
+        i = int(i)
+        urls = self.current[i - 1]['entities']['urls']
+        if not urls:
+            print 'No urls for tweet %d' % i
+            return
+
+        if j is None:
+            for u in urls:
+                webbrowser.open_new_tab(u['url'])
+        elif 1 <= j <= len(urls):
+            webbrowser.open_new_tab(urls[j - 1]['url'])
+        else:
+            print 'url out of range'
 
     def highlight_text(self, text):
         text = re.sub('(@[A-Za-z0-9_]+)', str(colored.blue('\\1')), text,
