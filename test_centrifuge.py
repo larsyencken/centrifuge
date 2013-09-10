@@ -21,9 +21,8 @@ class MockTwitterApi(object):
         anchor_id = max_id or 50000
         for i in xrange(count):
             ts.append({
-                    'id': anchor_id - i,
-                    'text': 'Blah blah blah #yeah',
-                })
+                'id': anchor_id - i, 'text': 'Blah blah blah #yeah',
+            })
         return ts
 
 
@@ -45,8 +44,8 @@ class TwitterCursorTest(unittest.TestCase):
 
 def suite():
     return unittest.TestSuite((
-            unittest.makeSuite(),
-        ))
+        unittest.makeSuite(TwitterCursorTest),
+    ))
 
 
 if __name__ == '__main__':

@@ -30,7 +30,7 @@ LOG_FILE = None
 
 if LOG_FILE:
     logging.basicConfig(filename=os.path.expanduser(LOG_FILE),
-            level=logging.DEBUG)
+                        level=logging.DEBUG)
 
 
 class TwitterCursor(object):
@@ -57,7 +57,8 @@ class TwitterCursor(object):
                 yield t
 
             self.below = list(reversed(self.api.statuses.home_timeline(
-                    count=20, max_id=self.oldest_seen - 1)))
+                count=20, max_id=self.oldest_seen - 1)
+            ))
 
     def pushback_older(self, t):
         self.below.append(t)
@@ -65,7 +66,8 @@ class TwitterCursor(object):
     def iternewer(self):
         newest = self.above[0]['id'] if self.above else self.newest_seen
         self.above[0:0] = list(reversed(self.api.statuses.home_timeline(
-                count=20, since_id=newest)))
+            count=20, since_id=newest)
+        ))
         while self.above:
             t = self.above.pop()
             self.oldest_seen = min(self.oldest_seen, t['id'])
@@ -98,26 +100,26 @@ class InteractiveStream(cmd.Cmd):
             m = re.match('^RT (@[a-zA-Z0-9_]+): ', text)
             if m:
                 author = u'%s, via %s (%s)' % (
-                        colored.red(m.group(1)),
-                        colored.red('@%s' % user),
-                        name
-                    )
+                    colored.red(m.group(1)),
+                    colored.red('@%s' % user),
+                    name
+                )
                 text = text.split(': ', 1)[1]
             else:
                 author = u'%s (%s)' % (colored.red('@%s' % user), name)
 
             indent = 4
             lines = map(self.highlight_text, textwrap.wrap(
-                    self.h.unescape(text),
-                    width - indent - WIDTH_TOLERANCE
-                ))
+                self.h.unescape(text),
+                width - indent - WIDTH_TOLERANCE
+            ))
             lines.append(author)
 
             tweet_height = len(lines) + 1
             logging.debug('Tweet height is %d, got %d left' % (
-                    tweet_height,
-                    remaining,
-                ))
+                tweet_height,
+                remaining,
+            ))
             if tweet_height > remaining:
                 # XXX push back tweet?
                 logging.debug("Couldn't fit tweet -- finishing layout")
@@ -165,9 +167,9 @@ class InteractiveStream(cmd.Cmd):
 
     def highlight_text(self, text):
         text = re.sub(u'(@[A-Za-z0-9_]+)', str(colored.blue('\\1')), text,
-                re.UNICODE)
+                      re.UNICODE)
         text = re.sub(u'(https?://[^ "\'”“]+)', str(colored.cyan('\\1')), text,
-                re.UNICODE)
+                      re.UNICODE)
         text = re.sub(u'(#[^,.:; ]+)', str(colored.green('\\1')), text)
         text = re.sub(u' +', ' ', text, re.UNICODE)
         return text
@@ -183,15 +185,11 @@ class InteractiveStream(cmd.Cmd):
 def connect():
     "Prepare an authenticated API object for use."
     oauth_token, oauth_secret = twitter.read_token_file(
-            os.path.expanduser(OAUTH_FILE)
-        )
+        os.path.expanduser(OAUTH_FILE)
+    )
 
-    t = twitter.Twitter(auth=twitter.OAuth(
-            oauth_token,
-            oauth_secret,
-            CONSUMER_KEY,
-            CONSUMER_SECRET,
-        ))
+    t = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret,
+                                           CONSUMER_KEY, CONSUMER_SECRET))
 
     return t
 
